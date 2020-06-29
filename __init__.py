@@ -7,6 +7,7 @@ from os.path import join, dirname
 from os import listdir
 from requests_cache import CachedSession
 from datetime import timedelta
+from mycroft.util import create_daemon
 
 
 class HubbleTelescopeSkill(MycroftSkill):
@@ -16,16 +17,19 @@ class HubbleTelescopeSkill(MycroftSkill):
             # idle screen, random or latest
             self.settings["random"] = True
         if "include_james_webb" not in self.settings:
-            self.settings["include_james_webb"] = False
+            # TODO once webb is deployed in 2021 make this false
+            self.settings["include_james_webb"] = True
         if "exclude_long" not in self.settings:
             self.settings["exclude_long"] = True
         self.session = CachedSession(backend='memory',
-                                     expire_after=timedelta(hours=1))
+                                     expire_after=timedelta(hours=6))
         self.translate_cache = {}
+        # bootstrap - cache image data
+        create_daemon(self.latest_hubble)
 
     # hubble api
     def latest_hubble(self, n=-1):
-        url = "http://hubblesite.org/api/v3/images/all"
+        url = "http://hubblesite.org/api/v3/images/all?page=all"
         info_url = "http://hubblesite.org/api/v3/image/{img_id}"
         entries = self.session.get(url).json()
         wallpapers = []
