@@ -1,0 +1,36 @@
+{
+  "name": "Hubble Space Telescope Skill",
+  "skillname": "skill-hubble-telescope",
+  "authorname": "JarbasSkills",
+  "foldername": "",
+  "url": "https://github.com/JarbasSkills/skill-hubble-telescope",
+  "branch": "master",
+  "desktopFile": false,
+  "warning": "",
+  "systemDeps": false,
+  "platforms": [
+    "arm",
+    "arm64",
+    "i386",
+    "x86_64",
+    "ia64"
+  ],
+  "examples": [
+    "picture from hubble telescope",
+    "explain",
+    "tell me about the hubble telescope",
+    "Where is the hubble telescope",
+    "who was hubble",
+    "what is hubble space telescope mission",
+    "why was hubble created",
+    "what are hubble's instruments",
+    "how does hubble work",
+    "did hubble find any planets",
+    "can hubble take pictures of earth",
+    "can hubble see things on the moon",
+    "is hubble data public",
+    "Can we see live photos from Hubble",
+    "Where is hubble looking at",
+    "Are the colors in hubble images real"
+  ]
+}
