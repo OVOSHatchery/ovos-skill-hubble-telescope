@@ -14,7 +14,11 @@ class HubbleTelescopeSkill(MycroftSkill):
         super(HubbleTelescopeSkill, self).__init__(name="HubbleTelescopeSkill")
         if "random" not in self.settings:
             # idle screen, random or latest
-            self.settings["random"] = False
+            self.settings["random"] = True
+        if "include_james_webb" not in self.settings:
+            self.settings["include_james_webb"] = True
+        if "exclude_long" not in self.settings:
+            self.settings["exclude_long"] = True
         self.session = CachedSession(backend='memory',
                                      expire_after=timedelta(hours=1))
         self.translate_cache = {}
@@ -28,7 +32,8 @@ class HubbleTelescopeSkill(MycroftSkill):
         for e in entries:
             image_data = self.session.get(
                 info_url.format(img_id=e["id"])).json()
-            if image_data["mission"] != "hubble":
+            if image_data["mission"] != "hubble" and\
+                    not self.settings["include_james_webb"]:
                 continue
             data = {
                 "author": "Hubble Space Telescope",
@@ -42,6 +47,9 @@ class HubbleTelescopeSkill(MycroftSkill):
             max_size = 0
             min_size = 99999
             for link in image_data["image_files"]:
+                if link['height'] > 2 * link['width'] \
+                        and self.settings["exclude_long"]:
+                    continue  # skip long infographics
                 for ext in [".png", ".jpg", ".jpeg"]:
                     if link["file_url"].endswith(ext):
                         if link["width"] > max_size:
