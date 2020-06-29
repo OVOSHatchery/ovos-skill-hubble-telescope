@@ -52,6 +52,8 @@ class HubbleTelescopeSkill(MycroftSkill):
             for link in image_data["image_files"]:
                 for ext in [".png", ".jpg", ".jpeg"]:
                     if link["file_url"].endswith(ext):
+                        if not link.get("height") or not link.get("width"):
+                            continue
                         if link['height'] > 2 * link['width'] \
                                 and self.settings["exclude_long"]:
                             continue  # skip long infographics
