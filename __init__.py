@@ -17,8 +17,7 @@ class HubbleTelescopeSkill(MycroftSkill):
             # idle screen, random or latest
             self.settings["random"] = True
         if "include_james_webb" not in self.settings:
-            # TODO once webb is deployed in 2021 make this false
-            self.settings["include_james_webb"] = True
+            self.settings["include_james_webb"] = False
         if "exclude_long" not in self.settings:
             self.settings["exclude_long"] = True
         self.session = CachedSession(backend='memory',
