@@ -1,18 +1,20 @@
-from mycroft import intent_file_handler, intent_handler, MycroftSkill
-from mycroft.skills.core import resting_screen_handler
-from adapt.intent import IntentBuilder
-from mtranslate import translate
 import random
-from os.path import join, dirname
-from os import listdir
-from requests_cache import CachedSession
 from datetime import timedelta
-from mycroft.util import create_daemon
+from os import listdir
+from os.path import join, dirname
+
+from ovos_utils import create_daemon
+from ovos_workshop.decorators import intent_handler
+from ovos_workshop.decorators import resting_screen_handler
+from ovos_workshop.intents import IntentBuilder
+from ovos_workshop.skills import OVOSSkill
+from requests_cache import CachedSession
 
 
-class HubbleTelescopeSkill(MycroftSkill):
-    def __init__(self):
-        super(HubbleTelescopeSkill, self).__init__(name="HubbleTelescopeSkill")
+class HubbleTelescopeSkill(OVOSSkill):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if "random" not in self.settings:
             # idle screen, random or latest
             self.settings["random"] = True
@@ -35,17 +37,20 @@ class HubbleTelescopeSkill(MycroftSkill):
         for e in entries:
             image_data = self.session.get(
                 info_url.format(img_id=e["id"])).json()
-            if image_data["mission"] != "hubble" and\
+            if image_data["mission"] != "hubble" and \
                     not self.settings["include_james_webb"]:
                 continue
             data = {
-                "author": "Hubble Space Telescope",
-                "caption": image_data.get("description"),
-                "title": image_data["name"],
-                "url": "https://hubblesite.org/image/{id}/gallery".format(
-                    id=e["id"]),
-                "imgLink": "",
-
+                "author":
+                    "Hubble Space Telescope",
+                "caption":
+                    image_data.get("description"),
+                "title":
+                    image_data["name"],
+                "url":
+                    "https://hubblesite.org/image/{id}/gallery".format(id=e["id"]),
+                "imgLink":
+                    "",
             }
             max_size = 0
             min_size = 99999
@@ -80,15 +85,20 @@ class HubbleTelescopeSkill(MycroftSkill):
         pictures = []
         for e in entries:
             data = {
-                "author": "Space Telescope Live",
-                "caption": e["description"].replace('I am looking',
-                                                    "Hubble is looking"),
-                "title": e["title"],
-                "url": e["link"],
-                "imgLink": "http:" + e["image"],
-                "thumbnail": "http:" + e["thumbnail_large"],
-                "date": e["pub_date"]
-
+                "author":
+                    "Space Telescope Live",
+                "caption":
+                    e["description"].replace('I am looking', "Hubble is looking"),
+                "title":
+                    e["title"],
+                "url":
+                    e["link"],
+                "imgLink":
+                    "http:" + e["image"],
+                "thumbnail":
+                    "http:" + e["thumbnail_large"],
+                "date":
+                    e["pub_date"]
             }
 
             if data["imgLink"]:
@@ -108,7 +118,7 @@ class HubbleTelescopeSkill(MycroftSkill):
         for k in data:
             if not self.lang.startswith("en") and k in tx:
                 if data[k] not in self.translate_cache:
-                    translated = translate(data[k], self.lang)
+                    translated = self.translator.translate(data[k], self.lang)
                     self.translate_cache[data[k]] = translated
                     data[k] = translated
                 else:
@@ -128,7 +138,7 @@ class HubbleTelescopeSkill(MycroftSkill):
         for k in data:
             if not self.lang.startswith("en") and k in tx:
                 if data[k] not in self.translate_cache:
-                    translated = translate(data[k], self.lang)
+                    translated = self.translator.translate(data[k], self.lang)
                     self.translate_cache[data[k]] = translated
                     data[k] = translated
                 else:
@@ -150,124 +160,150 @@ class HubbleTelescopeSkill(MycroftSkill):
         pics = listdir(path)
         return join(path, random.choice(pics))
 
-    @intent_file_handler("who.intent")
+    @intent_handler("who.intent")
     def handle_who_hubble_intent(self, message):
         hubble = join(dirname(__file__), "ui", "images", "edwin_hubble.jpg")
-        self.gui.show_image(hubble, override_idle=True,
+        self.gui.show_image(hubble,
+                            override_idle=True,
                             fill='PreserveAspectFit',
                             title="Edwin Powell Hubble",
                             caption="November 20, 1889 – September 28, 1953")
         self.speak_dialog("hubble.who")
 
-    @intent_file_handler("about.intent")
+    @intent_handler("about.intent")
     def handle_about_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("about", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("when.intent")
+    @intent_handler("when.intent")
     def handle_when_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.when", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_handler(IntentBuilder("WhyIntent")
-                    .require("why").require("HubbleTelescope"))
+    @intent_handler(
+        IntentBuilder("WhyIntent").require("why").require("HubbleTelescope"))
     def handle_why_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.why", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_handler(IntentBuilder("HowIntent")
-                    .require("how").require("HubbleTelescope")
-                    .optionally("work"))
+    @intent_handler(
+        IntentBuilder("HowIntent").require("how").require(
+            "HubbleTelescope").optionally("work"))
     def handle_how_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.how", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_handler(IntentBuilder("WhereIntent")
-                    .require("where").require("HubbleTelescope"))
+    @intent_handler(
+        IntentBuilder("WhereIntent").require("where").require(
+            "HubbleTelescope"))
     def handle_where_hubble_intent(self, message):
         if self.config_core["system_unit"] == "metric":
             altitude = "547"  # kilometers
             speed = "27,300"  # kilometers per hour
-            caption = self.dialog_renderer.render("hubble.where.metric",
-                                                  {"altitude": altitude,
-                                                   "speed": speed})
+            caption = self.dialog_renderer.render("hubble.where.metric", {
+                "altitude": altitude,
+                "speed": speed
+            })
         else:
             # YOU ARE ASSHOLES
             # I shouldn't even support this and force you to use the metric
             # system or fork
             speed = "17,000"  # miles per hour
             altitude = "340"  # miles
-            caption = self.dialog_renderer.render("hubble.where",
-                                                  {"altitude": altitude,
-                                                   "speed": speed})
+            caption = self.dialog_renderer.render("hubble.where", {
+                "altitude": altitude,
+                "speed": speed
+            })
         hubble = self._random_pic()
 
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("mission.intent")
+    @intent_handler("mission.intent")
     def handle_mission_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.mission", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("planets.intent")
+    @intent_handler("planets.intent")
     def handle_planets_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.mission", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("live.intent")
+    @intent_handler("live.intent")
     def handle_live_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.live", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("earth.intent")
+    @intent_handler("earth.intent")
     def handle_earth_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.earth", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
         self.set_context("HubbleTelescope")  # follow up question to elaborate
 
-    @intent_file_handler("data_public.intent")
+    @intent_handler("data_public.intent")
     def handle_data_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.data.public", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler("colors.intent")
+    @intent_handler("colors.intent")
     def handle_colors_hubble_intent(self, message):
         hubble = self._random_pic()
         caption = self.dialog_renderer.render("hubble.colors", {})
-        self.gui.show_image(hubble, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
+        self.gui.show_image(hubble,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
         self.speak(caption, wait=True)
 
-    @intent_file_handler('hubble.intent')
+    @intent_handler('hubble.intent')
     def handle_pod(self, message):
         if self.voc_match(message.data["utterance"], "latest"):
             self.update_picture(True)
@@ -280,7 +316,7 @@ class HubbleTelescopeSkill(MycroftSkill):
 
         self.speak(self.settings['caption'])
 
-    @intent_file_handler('hubble.now.intent')
+    @intent_handler('hubble.now.intent')
     def handle_now(self, message):
         self.update_picture_stn()
         self.gui.clear()
@@ -290,22 +326,22 @@ class HubbleTelescopeSkill(MycroftSkill):
 
         self.speak(self.settings['caption'])
 
-    @intent_handler(IntentBuilder("ExplainIntent")
-                    .require("ExplainKeyword").require("HubbleTelescope"))
+    @intent_handler(
+        IntentBuilder("ExplainIntent").require("ExplainKeyword").require(
+            "HubbleTelescope"))
     def handle_explain(self, message):
-        self.gui.show_image(self.settings['imgLink'], override_idle=True,
+        self.gui.show_image(self.settings['imgLink'],
+                            override_idle=True,
                             fill='PreserveAspectFit',
                             caption=self.settings['caption'])
         self.speak(self.settings['caption'], wait=True)
 
-    @intent_file_handler("moon.intent")
+    @intent_handler("moon.intent")
     def moon_intent(self, message):
         picture = join(dirname(__file__), "ui", "images", "hubble_moon.png")
         caption = self.dialog_renderer.render("hubble.moon.caption", {})
         self.speak_dialog("hubble.moon")
-        self.gui.show_image(picture, override_idle=True,
-                            fill='PreserveAspectFit', caption=caption)
-
-
-def create_skill():
-    return HubbleTelescopeSkill()
+        self.gui.show_image(picture,
+                            override_idle=True,
+                            fill='PreserveAspectFit',
+                            caption=caption)
